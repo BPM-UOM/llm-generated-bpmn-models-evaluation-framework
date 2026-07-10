@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_ClaimHandling" targetNamespace="http://example.com/bpmn/claim-handling" exporter="Camunda Web Modeler" exporterVersion="f51c130" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="Process_ClaimHandling" name="Claim Handling Process" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_ClaimRegistered" name="Claim registered">
+      <bpmn:outgoing>Flow_Start_Examine</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_ExamineClaim" name="Examine claim">
+      <bpmn:incoming>Flow_Start_Examine</bpmn:incoming>
+      <bpmn:outgoing>Flow_Examine_Recommendation</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_WriteRecommendation" name="Write settlement recommendation">
+      <bpmn:incoming>Flow_Examine_Recommendation</bpmn:incoming>
+      <bpmn:incoming>Flow_NotOK_Rewrite</bpmn:incoming>
+      <bpmn:outgoing>Flow_Recommendation_Check</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_CheckRecommendation" name="Check settlement recommendation">
+      <bpmn:incoming>Flow_Recommendation_Check</bpmn:incoming>
+      <bpmn:outgoing>Flow_Check_Decision</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_ClaimOK" name="Claim OK?" default="Flow_NotOK_Rewrite">
+      <bpmn:incoming>Flow_Check_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_OK_Proceed</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NotOK_Rewrite</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_ProceedHandling" name="Proceed with claim handling">
+      <bpmn:incoming>Flow_OK_Proceed</bpmn:incoming>
+      <bpmn:outgoing>Flow_Proceed_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndEvent_ProcessProceeds" name="Claim handling proceeds">
+      <bpmn:incoming>Flow_Proceed_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_Examine" sourceRef="StartEvent_ClaimRegistered" targetRef="Task_ExamineClaim" />
+    <bpmn:sequenceFlow id="Flow_Examine_Recommendation" sourceRef="Task_ExamineClaim" targetRef="Task_WriteRecommendation" />
+    <bpmn:sequenceFlow id="Flow_Recommendation_Check" sourceRef="Task_WriteRecommendation" targetRef="Task_CheckRecommendation" />
+    <bpmn:sequenceFlow id="Flow_Check_Decision" sourceRef="Task_CheckRecommendation" targetRef="Gateway_ClaimOK" />
+    <bpmn:sequenceFlow id="Flow_OK_Proceed" name="OK" sourceRef="Gateway_ClaimOK" targetRef="Task_ProceedHandling">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">claimStatus == "OK"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NotOK_Rewrite" name="Not OK" sourceRef="Gateway_ClaimOK" targetRef="Task_WriteRecommendation" />
+    <bpmn:sequenceFlow id="Flow_Proceed_End" sourceRef="Task_ProceedHandling" targetRef="EndEvent_ProcessProceeds" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ClaimHandling">
+    <bpmndi:BPMNPlane id="BPMNPlane_ClaimHandling" bpmnElement="Process_ClaimHandling">
+      <bpmndi:BPMNShape id="Shape_StartEvent" bpmnElement="StartEvent_ClaimRegistered">
+        <dc:Bounds x="180" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="158" y="145" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ExamineClaim" bpmnElement="Task_ExamineClaim">
+        <dc:Bounds x="270" y="80" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_WriteRecommendation" bpmnElement="Task_WriteRecommendation">
+        <dc:Bounds x="450" y="80" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CheckRecommendation" bpmnElement="Task_CheckRecommendation">
+        <dc:Bounds x="680" y="80" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ClaimOK" bpmnElement="Gateway_ClaimOK" isMarkerVisible="true">
+        <dc:Bounds x="910" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="909" y="152" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ProceedHandling" bpmnElement="Task_ProceedHandling">
+        <dc:Bounds x="1030" y="80" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent" bpmnElement="EndEvent_ProcessProceeds">
+        <dc:Bounds x="1250" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1232" y="145" width="73" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Start_Examine" bpmnElement="Flow_Start_Examine">
+        <di:waypoint x="216" y="120" />
+        <di:waypoint x="270" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Examine_Recommendation" bpmnElement="Flow_Examine_Recommendation">
+        <di:waypoint x="390" y="120" />
+        <di:waypoint x="450" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Recommendation_Check" bpmnElement="Flow_Recommendation_Check">
+        <di:waypoint x="620" y="120" />
+        <di:waypoint x="680" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Check_Decision" bpmnElement="Flow_Check_Decision">
+        <di:waypoint x="850" y="120" />
+        <di:waypoint x="910" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_OK_Proceed" bpmnElement="Flow_OK_Proceed">
+        <di:waypoint x="960" y="120" />
+        <di:waypoint x="1030" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="985" y="100" width="16" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_NotOK_Rewrite" bpmnElement="Flow_NotOK_Rewrite">
+        <di:waypoint x="935" y="145" />
+        <di:waypoint x="935" y="230" />
+        <di:waypoint x="535" y="230" />
+        <di:waypoint x="535" y="160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="718" y="209" width="37" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Proceed_End" bpmnElement="Flow_Proceed_End">
+        <di:waypoint x="1190" y="120" />
+        <di:waypoint x="1250" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

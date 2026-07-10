@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_ClaimHandling" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="f51c130" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:collaboration id="Collaboration_ClaimHandling">
+    <bpmn:participant id="Participant_ClaimsDepartment" name="Claims Department" processRef="Process_ClaimHandling" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_ClaimHandling" name="Claim Handling" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_ClaimHandling">
+      <bpmn:lane id="Lane_ClaimsOfficer" name="Claims Officer">
+        <bpmn:flowNodeRef>StartEvent_ClaimRegistered</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExamineClaim</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_WriteRecommendation</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_SeniorClaimsOfficer" name="Senior Claims Officer">
+        <bpmn:flowNodeRef>Task_CheckRecommendation</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ClaimOK</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_ClaimHandlingProceeds</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_ClaimRegistered" name="Claim registered">
+      <bpmn:outgoing>Flow_RegisteredToExamine</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_ExamineClaim" name="Examine claim">
+      <bpmn:incoming>Flow_RegisteredToExamine</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExamineToWrite</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_WriteRecommendation" name="Write settlement recommendation">
+      <bpmn:incoming>Flow_ExamineToWrite</bpmn:incoming>
+      <bpmn:incoming>Flow_NotOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_WriteToCheck</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_CheckRecommendation" name="Check recommendation">
+      <bpmn:incoming>Flow_WriteToCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckToGateway</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_ClaimOK" name="Claim OK?">
+      <bpmn:incoming>Flow_CheckToGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_OK</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NotOK</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_ClaimHandlingProceeds" name="Claim handling proceeds">
+      <bpmn:incoming>Flow_OK</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_RegisteredToExamine" sourceRef="StartEvent_ClaimRegistered" targetRef="Task_ExamineClaim" />
+    <bpmn:sequenceFlow id="Flow_ExamineToWrite" sourceRef="Task_ExamineClaim" targetRef="Task_WriteRecommendation" />
+    <bpmn:sequenceFlow id="Flow_WriteToCheck" sourceRef="Task_WriteRecommendation" targetRef="Task_CheckRecommendation" />
+    <bpmn:sequenceFlow id="Flow_CheckToGateway" sourceRef="Task_CheckRecommendation" targetRef="Gateway_ClaimOK" />
+    <bpmn:sequenceFlow id="Flow_OK" name="OK" sourceRef="Gateway_ClaimOK" targetRef="EndEvent_ClaimHandlingProceeds" />
+    <bpmn:sequenceFlow id="Flow_NotOK" name="Not OK" sourceRef="Gateway_ClaimOK" targetRef="Task_WriteRecommendation" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ClaimHandling">
+    <bpmndi:BPMNPlane id="BPMNPlane_ClaimHandling" bpmnElement="Collaboration_ClaimHandling">
+      <bpmndi:BPMNShape id="Shape_Participant_ClaimsDepartment" bpmnElement="Participant_ClaimsDepartment" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="920" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_SeniorClaimsOfficer" bpmnElement="Lane_SeniorClaimsOfficer" isHorizontal="true">
+        <dc:Bounds x="190" y="280" width="890" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_ClaimsOfficer" bpmnElement="Lane_ClaimsOfficer" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="890" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_StartEvent_ClaimRegistered" bpmnElement="StartEvent_ClaimRegistered">
+        <dc:Bounds x="240" y="162" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="218" y="205" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ExamineClaim" bpmnElement="Task_ExamineClaim">
+        <dc:Bounds x="330" y="140" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_WriteRecommendation" bpmnElement="Task_WriteRecommendation">
+        <dc:Bounds x="490" y="140" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CheckRecommendation" bpmnElement="Task_CheckRecommendation">
+        <dc:Bounds x="660" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ClaimOK" bpmnElement="Gateway_ClaimOK" isMarkerVisible="true">
+        <dc:Bounds x="820" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="818" y="412" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_ClaimHandlingProceeds" bpmnElement="EndEvent_ClaimHandlingProceeds">
+        <dc:Bounds x="950" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="930" y="405" width="76" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_RegisteredToExamine" bpmnElement="Flow_RegisteredToExamine">
+        <di:waypoint x="276" y="180" />
+        <di:waypoint x="330" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ExamineToWrite" bpmnElement="Flow_ExamineToWrite">
+        <di:waypoint x="430" y="180" />
+        <di:waypoint x="490" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_WriteToCheck" bpmnElement="Flow_WriteToCheck">
+        <di:waypoint x="540" y="220" />
+        <di:waypoint x="540" y="380" />
+        <di:waypoint x="660" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_CheckToGateway" bpmnElement="Flow_CheckToGateway">
+        <di:waypoint x="760" y="380" />
+        <di:waypoint x="820" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_OK" bpmnElement="Flow_OK">
+        <di:waypoint x="870" y="380" />
+        <di:waypoint x="950" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="896" y="362" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_NotOK" bpmnElement="Flow_NotOK">
+        <di:waypoint x="845" y="355" />
+        <di:waypoint x="845" y="180" />
+        <di:waypoint x="590" y="180" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="852" y="260" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

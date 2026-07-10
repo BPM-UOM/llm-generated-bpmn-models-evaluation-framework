@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_TransportDrivingLicence" targetNamespace="https://example.org/bpmn/transport-driving-licence" exporter="Camunda Web Modeler" exporterVersion="f51c130" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:message id="Message_Application" name="Application, solemn declaration and supporting documents" />
+  <bpmn:message id="Message_AdditionalInfoRequest" name="Request for additional information" />
+  <bpmn:message id="Message_AdditionalDocuments" name="Additional documents" />
+  <bpmn:message id="Message_SubmissionCertificate" name="Certificate of Submission of Request" />
+  <bpmn:message id="Message_ProvisionalLicence" name="Provisional driving licence" />
+  <bpmn:message id="Message_PrintPackage" name="Electronic information and print application with photograph and signature" />
+  <bpmn:message id="Message_PrintedLicence" name="Printed driving licence" />
+  <bpmn:message id="Message_DrivingLicence" name="Driving licence handed over in person" />
+  <bpmn:collaboration id="Collaboration_TransportDrivingLicence">
+    <bpmn:participant id="Participant_InterestedParty" name="Interested Party" />
+    <bpmn:participant id="Participant_Service" name="Transport and Communications Service of the Regional Unit" processRef="Process_TransportDrivingLicence" />
+    <bpmn:participant id="Participant_PassportDirectorate" name="Passport Directorate of the Hellenic Police" />
+    <bpmn:messageFlow id="MessageFlow_Application" name="Direct or digital submission via [Link]" sourceRef="Participant_InterestedParty" targetRef="StartEvent_ApplicationReceived" messageRef="Message_Application" />
+    <bpmn:messageFlow id="MessageFlow_AdditionalInfoRequest" sourceRef="Task_RequestAdditionalInfo" targetRef="Participant_InterestedParty" messageRef="Message_AdditionalInfoRequest" />
+    <bpmn:messageFlow id="MessageFlow_AdditionalDocuments" sourceRef="Participant_InterestedParty" targetRef="CatchEvent_AdditionalDocuments" messageRef="Message_AdditionalDocuments" />
+    <bpmn:messageFlow id="MessageFlow_SubmissionCertificate" sourceRef="Task_ProvideCertificate" targetRef="Participant_InterestedParty" messageRef="Message_SubmissionCertificate" />
+    <bpmn:messageFlow id="MessageFlow_ProvisionalLicence" sourceRef="Task_IssueProvisionalLicence" targetRef="Participant_InterestedParty" messageRef="Message_ProvisionalLicence" />
+    <bpmn:messageFlow id="MessageFlow_PrintPackage" sourceRef="Task_SendPrintPackage" targetRef="Participant_PassportDirectorate" messageRef="Message_PrintPackage" />
+    <bpmn:messageFlow id="MessageFlow_PrintedLicence" sourceRef="Participant_PassportDirectorate" targetRef="Task_ReceivePrintedLicence" messageRef="Message_PrintedLicence" />
+    <bpmn:messageFlow id="MessageFlow_DrivingLicence" sourceRef="Task_HandOverLicence" targetRef="Participant_InterestedParty" messageRef="Message_DrivingLicence" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_TransportDrivingLicence" name="Driving Licence Application and Issuance" isExecutable="false">
+    <bpmn:documentation>The process begins when the Regional Unit receives the application package directly or digitally via [Link]. The recurring reminder timer is to be interpreted using the organisation's business calendar so that each interval equals five working days.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Service">
+      <bpmn:lane id="Lane_Service" name="Transport and Communications Service">
+        <bpmn:flowNodeRef>Task_SendPrintPackage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ReceivePrintedLicence</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Official" name="Responsible Official">
+        <bpmn:flowNodeRef>StartEvent_ApplicationReceived</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckDocuments</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Omissions</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RequestAdditionalInfo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_WaitForDocumentsOrDeadline</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>CatchEvent_AdditionalDocuments</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>CatchEvent_15Days</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_NoDocuments</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RegisterApplication</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ProvideCertificate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ProvisionalNeeded</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IssueProvisionalLicence</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ProvisionalMerge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IssueDrivingLicence</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SendReminder</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_ReminderSent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HandOverLicence</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Completed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_Reminder</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_ApplicationReceived" name="Application package received">
+      <bpmn:documentation>Application - solemn declaration and supporting documents, submitted directly at the Service or digitally via [Link].</bpmn:documentation>
+      <bpmn:outgoing>Flow_Start_Check</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_Application" messageRef="Message_Application" />
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_CheckDocuments" name="Check completeness and correctness of supporting documents">
+      <bpmn:incoming>Flow_Start_Check</bpmn:incoming>
+      <bpmn:incoming>Flow_Documents_Recheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_Check_Omissions</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_Omissions" name="Omissions identified?" default="Flow_NoOmissions_Register">
+      <bpmn:incoming>Flow_Check_Omissions</bpmn:incoming>
+      <bpmn:outgoing>Flow_Omissions_Request</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NoOmissions_Register</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Task_RequestAdditionalInfo" name="Inform interested party and request additional information" messageRef="Message_AdditionalInfoRequest">
+      <bpmn:incoming>Flow_Omissions_Request</bpmn:incoming>
+      <bpmn:outgoing>Flow_Request_Wait</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:eventBasedGateway id="Gateway_WaitForDocumentsOrDeadline" name="Wait for documents or 15-day deadline">
+      <bpmn:incoming>Flow_Request_Wait</bpmn:incoming>
+      <bpmn:outgoing>Flow_Wait_Documents</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Wait_15Days</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="CatchEvent_AdditionalDocuments" name="Additional documents received">
+      <bpmn:incoming>Flow_Wait_Documents</bpmn:incoming>
+      <bpmn:outgoing>Flow_Documents_Recheck</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_AdditionalDocuments" messageRef="Message_AdditionalDocuments" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="CatchEvent_15Days" name="15 days pass without submission">
+      <bpmn:incoming>Flow_Wait_15Days</bpmn:incoming>
+      <bpmn:outgoing>Flow_15Days_Terminate</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_15Days">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P15D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="EndEvent_NoDocuments" name="Process terminated: documents not received">
+      <bpmn:incoming>Flow_15Days_Terminate</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerminateEventDefinition_NoDocuments" />
+    </bpmn:endEvent>
+    <bpmn:userTask id="Task_RegisterApplication" name="Register the application">
+      <bpmn:incoming>Flow_NoOmissions_Register</bpmn:incoming>
+      <bpmn:outgoing>Flow_Register_Certificate</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sendTask id="Task_ProvideCertificate" name="Give Certificate of Submission of Request" messageRef="Message_SubmissionCertificate">
+      <bpmn:incoming>Flow_Register_Certificate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Certificate_ProvisionalGateway</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:exclusiveGateway id="Gateway_ProvisionalNeeded" name="Licence expired or will expire before new form is printed?" default="Flow_ProvisionalNo_Merge">
+      <bpmn:incoming>Flow_Certificate_ProvisionalGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProvisionalYes_Issue</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ProvisionalNo_Merge</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Task_IssueProvisionalLicence" name="Issue provisional driving licence" messageRef="Message_ProvisionalLicence">
+      <bpmn:incoming>Flow_ProvisionalYes_Issue</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProvisionalIssued_Merge</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:exclusiveGateway id="Gateway_ProvisionalMerge" name="Continue issuance">
+      <bpmn:incoming>Flow_ProvisionalNo_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_ProvisionalIssued_Merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_Merge_IssueLicence</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_IssueDrivingLicence" name="Issue driving licence by electronic entry in the Driving Licence Register">
+      <bpmn:incoming>Flow_Merge_IssueLicence</bpmn:incoming>
+      <bpmn:outgoing>Flow_Issue_SendPrintPackage</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_SendReminder" name="Send automated reminder to responsible official">
+      <bpmn:incoming>Flow_Reminder_Send</bpmn:incoming>
+      <bpmn:outgoing>Flow_Reminder_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_ReminderSent" name="Reminder sent">
+      <bpmn:incoming>Flow_Reminder_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sendTask id="Task_SendPrintPackage" name="Send electronic information and print application to Passport Directorate" messageRef="Message_PrintPackage">
+      <bpmn:documentation>The print application includes the photograph and signature of the interested party.</bpmn:documentation>
+      <bpmn:incoming>Flow_Issue_SendPrintPackage</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendPrint_ReceivePrinted</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="Task_ReceivePrintedLicence" name="Receive printed driving licence from Passport Directorate" messageRef="Message_PrintedLicence">
+      <bpmn:incoming>Flow_SendPrint_ReceivePrinted</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReceivePrinted_HandOver</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:userTask id="Task_HandOverLicence" name="Hand over driving licence in person at the submitting Service">
+      <bpmn:incoming>Flow_ReceivePrinted_HandOver</bpmn:incoming>
+      <bpmn:outgoing>Flow_HandOver_End</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_Completed" name="Driving licence received by interested party">
+      <bpmn:incoming>Flow_HandOver_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:boundaryEvent id="BoundaryEvent_Reminder" name="Every 5 working days while not issued" cancelActivity="false" attachedToRef="Task_IssueDrivingLicence">
+      <bpmn:documentation>Recurring non-interrupting reminder. Configure the workflow engine's business calendar so the interval is five working days.</bpmn:documentation>
+      <bpmn:outgoing>Flow_Reminder_Send</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_Reminder">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">R/P5D</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_Start_Check" sourceRef="StartEvent_ApplicationReceived" targetRef="Task_CheckDocuments" />
+    <bpmn:sequenceFlow id="Flow_Documents_Recheck" sourceRef="CatchEvent_AdditionalDocuments" targetRef="Task_CheckDocuments" />
+    <bpmn:sequenceFlow id="Flow_Check_Omissions" sourceRef="Task_CheckDocuments" targetRef="Gateway_Omissions" />
+    <bpmn:sequenceFlow id="Flow_Omissions_Request" name="Yes" sourceRef="Gateway_Omissions" targetRef="Task_RequestAdditionalInfo">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">omissionsIdentified = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NoOmissions_Register" name="No" sourceRef="Gateway_Omissions" targetRef="Task_RegisterApplication" />
+    <bpmn:sequenceFlow id="Flow_Request_Wait" sourceRef="Task_RequestAdditionalInfo" targetRef="Gateway_WaitForDocumentsOrDeadline" />
+    <bpmn:sequenceFlow id="Flow_Wait_Documents" sourceRef="Gateway_WaitForDocumentsOrDeadline" targetRef="CatchEvent_AdditionalDocuments" />
+    <bpmn:sequenceFlow id="Flow_Wait_15Days" sourceRef="Gateway_WaitForDocumentsOrDeadline" targetRef="CatchEvent_15Days" />
+    <bpmn:sequenceFlow id="Flow_15Days_Terminate" sourceRef="CatchEvent_15Days" targetRef="EndEvent_NoDocuments" />
+    <bpmn:sequenceFlow id="Flow_Register_Certificate" sourceRef="Task_RegisterApplication" targetRef="Task_ProvideCertificate" />
+    <bpmn:sequenceFlow id="Flow_Certificate_ProvisionalGateway" sourceRef="Task_ProvideCertificate" targetRef="Gateway_ProvisionalNeeded" />
+    <bpmn:sequenceFlow id="Flow_ProvisionalYes_Issue" name="Yes" sourceRef="Gateway_ProvisionalNeeded" targetRef="Task_IssueProvisionalLicence">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">licenceExpiredOrWillExpireBeforePrinting = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ProvisionalNo_Merge" name="No" sourceRef="Gateway_ProvisionalNeeded" targetRef="Gateway_ProvisionalMerge" />
+    <bpmn:sequenceFlow id="Flow_ProvisionalIssued_Merge" sourceRef="Task_IssueProvisionalLicence" targetRef="Gateway_ProvisionalMerge" />
+    <bpmn:sequenceFlow id="Flow_Merge_IssueLicence" sourceRef="Gateway_ProvisionalMerge" targetRef="Task_IssueDrivingLicence" />
+    <bpmn:sequenceFlow id="Flow_Issue_SendPrintPackage" sourceRef="Task_IssueDrivingLicence" targetRef="Task_SendPrintPackage" />
+    <bpmn:sequenceFlow id="Flow_Reminder_Send" sourceRef="BoundaryEvent_Reminder" targetRef="Task_SendReminder" />
+    <bpmn:sequenceFlow id="Flow_Reminder_End" sourceRef="Task_SendReminder" targetRef="EndEvent_ReminderSent" />
+    <bpmn:sequenceFlow id="Flow_SendPrint_ReceivePrinted" sourceRef="Task_SendPrintPackage" targetRef="Task_ReceivePrintedLicence" />
+    <bpmn:sequenceFlow id="Flow_ReceivePrinted_HandOver" sourceRef="Task_ReceivePrintedLicence" targetRef="Task_HandOverLicence" />
+    <bpmn:sequenceFlow id="Flow_HandOver_End" sourceRef="Task_HandOverLicence" targetRef="EndEvent_Completed" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_TransportDrivingLicence">
+    <bpmndi:BPMNPlane id="BPMNPlane_TransportDrivingLicence" bpmnElement="Collaboration_TransportDrivingLicence">
+      <bpmndi:BPMNShape id="Shape_Participant_InterestedParty" bpmnElement="Participant_InterestedParty" isHorizontal="true">
+        <dc:Bounds x="160" y="40" width="2580" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Participant_Service" bpmnElement="Participant_Service" isHorizontal="true">
+        <dc:Bounds x="160" y="170" width="2580" height="500" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Service" bpmnElement="Lane_Service" isHorizontal="true">
+        <dc:Bounds x="190" y="520" width="2550" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Official" bpmnElement="Lane_Official" isHorizontal="true">
+        <dc:Bounds x="190" y="170" width="2550" height="350" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_StartEvent" bpmnElement="StartEvent_ApplicationReceived">
+        <dc:Bounds x="250" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="225" y="398" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CheckDocuments" bpmnElement="Task_CheckDocuments">
+        <dc:Bounds x="330" y="340" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_GatewayOmissions" bpmnElement="Gateway_Omissions" isMarkerVisible="true">
+        <dc:Bounds x="530" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="529" y="405" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_RequestAdditionalInfo" bpmnElement="Task_RequestAdditionalInfo">
+        <dc:Bounds x="620" y="210" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EventBasedGateway" bpmnElement="Gateway_WaitForDocumentsOrDeadline" isMarkerVisible="true">
+        <dc:Bounds x="835" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="817" y="275" width="86" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_AdditionalDocuments" bpmnElement="CatchEvent_AdditionalDocuments">
+        <dc:Bounds x="935" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="926" y="228" width="54" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_15Days" bpmnElement="CatchEvent_15Days">
+        <dc:Bounds x="935" y="292" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="921" y="328" width="65" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndNoDocuments" bpmnElement="EndEvent_NoDocuments">
+        <dc:Bounds x="1065" y="292" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1047" y="328" width="73" height="53" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_RegisterApplication" bpmnElement="Task_RegisterApplication">
+        <dc:Bounds x="635" y="340" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ProvideCertificate" bpmnElement="Task_ProvideCertificate">
+        <dc:Bounds x="825" y="340" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ProvisionalGateway" bpmnElement="Gateway_ProvisionalNeeded" isMarkerVisible="true">
+        <dc:Bounds x="1035" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1015" y="405" width="90" height="53" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_IssueProvisional" bpmnElement="Task_IssueProvisionalLicence">
+        <dc:Bounds x="1140" y="240" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ProvisionalMerge" bpmnElement="Gateway_ProvisionalMerge" isMarkerVisible="true">
+        <dc:Bounds x="1340" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1343" y="405" width="45" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_IssueDrivingLicence" bpmnElement="Task_IssueDrivingLicence">
+        <dc:Bounds x="1440" y="340" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SendReminder" bpmnElement="Task_SendReminder">
+        <dc:Bounds x="1590" y="445" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ReminderEnd" bpmnElement="EndEvent_ReminderSent">
+        <dc:Bounds x="1790" y="457" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1772" y="493" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SendPrintPackage" bpmnElement="Task_SendPrintPackage">
+        <dc:Bounds x="1690" y="555" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ReceivePrintedLicence" bpmnElement="Task_ReceivePrintedLicence">
+        <dc:Bounds x="1930" y="555" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_HandOverLicence" bpmnElement="Task_HandOverLicence">
+        <dc:Bounds x="2160" y="340" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndCompleted" bpmnElement="EndEvent_Completed">
+        <dc:Bounds x="2400" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2380" y="398" width="76" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_BoundaryReminder" bpmnElement="BoundaryEvent_Reminder">
+        <dc:Bounds x="1517" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1496" y="438" width="79" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_Start_Check" bpmnElement="Flow_Start_Check">
+        <di:waypoint x="286" y="380" />
+        <di:waypoint x="330" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Documents_Recheck" bpmnElement="Flow_Documents_Recheck">
+        <di:waypoint x="953" y="192" />
+        <di:waypoint x="953" y="185" />
+        <di:waypoint x="405" y="185" />
+        <di:waypoint x="405" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Check_Omissions" bpmnElement="Flow_Check_Omissions">
+        <di:waypoint x="480" y="380" />
+        <di:waypoint x="530" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Omissions_Request" bpmnElement="Flow_Omissions_Request">
+        <di:waypoint x="555" y="355" />
+        <di:waypoint x="555" y="250" />
+        <di:waypoint x="620" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="568" y="290" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_NoOmissions_Register" bpmnElement="Flow_NoOmissions_Register">
+        <di:waypoint x="580" y="380" />
+        <di:waypoint x="635" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="601" y="360" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Request_Wait" bpmnElement="Flow_Request_Wait">
+        <di:waypoint x="790" y="250" />
+        <di:waypoint x="835" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Wait_Documents" bpmnElement="Flow_Wait_Documents">
+        <di:waypoint x="885" y="250" />
+        <di:waypoint x="910" y="250" />
+        <di:waypoint x="910" y="210" />
+        <di:waypoint x="935" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Wait_15Days" bpmnElement="Flow_Wait_15Days">
+        <di:waypoint x="860" y="275" />
+        <di:waypoint x="860" y="310" />
+        <di:waypoint x="935" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_15Days_Terminate" bpmnElement="Flow_15Days_Terminate">
+        <di:waypoint x="971" y="310" />
+        <di:waypoint x="1065" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Register_Certificate" bpmnElement="Flow_Register_Certificate">
+        <di:waypoint x="775" y="380" />
+        <di:waypoint x="825" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Certificate_ProvisionalGateway" bpmnElement="Flow_Certificate_ProvisionalGateway">
+        <di:waypoint x="985" y="380" />
+        <di:waypoint x="1035" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ProvisionalYes_Issue" bpmnElement="Flow_ProvisionalYes_Issue">
+        <di:waypoint x="1060" y="355" />
+        <di:waypoint x="1060" y="280" />
+        <di:waypoint x="1140" y="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1084" y="260" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ProvisionalNo_Merge" bpmnElement="Flow_ProvisionalNo_Merge">
+        <di:waypoint x="1085" y="380" />
+        <di:waypoint x="1340" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1203" y="360" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ProvisionalIssued_Merge" bpmnElement="Flow_ProvisionalIssued_Merge">
+        <di:waypoint x="1300" y="280" />
+        <di:waypoint x="1365" y="280" />
+        <di:waypoint x="1365" y="355" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Merge_IssueLicence" bpmnElement="Flow_Merge_IssueLicence">
+        <di:waypoint x="1390" y="380" />
+        <di:waypoint x="1440" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Issue_SendPrintPackage" bpmnElement="Flow_Issue_SendPrintPackage">
+        <di:waypoint x="1630" y="380" />
+        <di:waypoint x="1655" y="380" />
+        <di:waypoint x="1655" y="595" />
+        <di:waypoint x="1690" y="595" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Reminder_Send" bpmnElement="Flow_Reminder_Send">
+        <di:waypoint x="1535" y="438" />
+        <di:waypoint x="1535" y="475" />
+        <di:waypoint x="1590" y="475" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Reminder_End" bpmnElement="Flow_Reminder_End">
+        <di:waypoint x="1750" y="475" />
+        <di:waypoint x="1790" y="475" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_SendPrint_ReceivePrinted" bpmnElement="Flow_SendPrint_ReceivePrinted">
+        <di:waypoint x="1880" y="595" />
+        <di:waypoint x="1930" y="595" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ReceivePrinted_HandOver" bpmnElement="Flow_ReceivePrinted_HandOver">
+        <di:waypoint x="2100" y="595" />
+        <di:waypoint x="2130" y="595" />
+        <di:waypoint x="2130" y="380" />
+        <di:waypoint x="2160" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_HandOver_End" bpmnElement="Flow_HandOver_End">
+        <di:waypoint x="2340" y="380" />
+        <di:waypoint x="2400" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_Participant_PassportDirectorate" bpmnElement="Participant_PassportDirectorate" isHorizontal="true">
+        <dc:Bounds x="160" y="710" width="2580" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_AdditionalInfoRequest" bpmnElement="MessageFlow_AdditionalInfoRequest">
+        <di:waypoint x="705" y="210" />
+        <di:waypoint x="705" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_SubmissionCertificate" bpmnElement="MessageFlow_SubmissionCertificate">
+        <di:waypoint x="905" y="340" />
+        <di:waypoint x="905" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_ProvisionalLicence" bpmnElement="MessageFlow_ProvisionalLicence">
+        <di:waypoint x="1220" y="240" />
+        <di:waypoint x="1220" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_DrivingLicence" bpmnElement="MessageFlow_DrivingLicence">
+        <di:waypoint x="2250" y="340" />
+        <di:waypoint x="2250" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_Application" bpmnElement="MessageFlow_Application">
+        <di:waypoint x="268" y="140" />
+        <di:waypoint x="268" y="362" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="246" y="241" width="74" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_AdditionalDocuments" bpmnElement="MessageFlow_AdditionalDocuments">
+        <di:waypoint x="953" y="140" />
+        <di:waypoint x="953" y="192" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_PrintPackage" bpmnElement="MessageFlow_PrintPackage">
+        <di:waypoint x="1785" y="635" />
+        <di:waypoint x="1785" y="710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_PrintedLicence" bpmnElement="MessageFlow_PrintedLicence">
+        <di:waypoint x="2015" y="710" />
+        <di:waypoint x="2015" y="635" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
