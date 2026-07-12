@@ -1,2 +1,0 @@
-Generate only a .bpmn file for this process description:
-{process_scenario}
